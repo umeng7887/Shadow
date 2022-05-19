@@ -20,8 +20,12 @@ package com.tencent.shadow.sample.host;
 
 import static com.tencent.shadow.sample.constant.Constant.PART_KEY_PLUGIN_BASE;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -32,15 +36,16 @@ import android.widget.TextView;
 
 import com.tencent.shadow.sample.constant.Constant;
 import com.tencent.shadow.sample.host.plugin_view.HostAddPluginViewActivity;
+import com.umeng.analytics.MobclickAgent;
 
 
 public class MainActivity extends Activity {
-
+    Context appContext = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setTheme(R.style.TestHostTheme);
-
+        appContext = this.getApplicationContext();
         LinearLayout rootView = new LinearLayout(this);
         rootView.setOrientation(LinearLayout.VERTICAL);
 
@@ -63,6 +68,7 @@ public class MainActivity extends Activity {
         startPluginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                MobclickAgent.onEvent(appContext, "MainProcessEkv");
                 String partKey = (String) partKeySpinner.getSelectedItem();
                 Intent intent = new Intent(MainActivity.this, PluginLoadActivity.class);
                 switch (partKey) {

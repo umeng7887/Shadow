@@ -3,6 +3,9 @@ package com.tencent.shadow.sample.plugin.app.lib;
 import static com.tencent.shadow.sample.plugin.app.lib.gallery.cases.UseCaseManager.useCases;
 
 import android.app.Application;
+import android.content.Context;
+import android.os.Debug;
+import android.util.Log;
 
 import com.tencent.shadow.sample.plugin.app.lib.gallery.cases.UseCaseManager;
 import com.tencent.shadow.sample.plugin.app.lib.gallery.cases.entity.UseCase;
@@ -27,12 +30,57 @@ import com.tencent.shadow.sample.plugin.app.lib.usecases.provider.TestFileProvid
 import com.tencent.shadow.sample.plugin.app.lib.usecases.receiver.TestDynamicReceiverActivity;
 import com.tencent.shadow.sample.plugin.app.lib.usecases.receiver.TestReceiverActivity;
 import com.tencent.shadow.sample.plugin.app.lib.usecases.webview.WebViewActivity;
+import com.umeng.analytics.process.DBPathAdapter;
+import com.umeng.commonsdk.UMConfigure;
+
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class UseCaseApplication extends Application {
+    public static final String DEFAULT_APPKEY = "64632267";
+    public static final String DEFAULT_CHANNEL = "Aliyun";
+    public static final String DEFAULT_HOST = "https://log-api.aplus.emas-poc.com";
+
     @Override
     public void onCreate() {
         super.onCreate();
+        /* 初始化QT SDK */
+        UMConfigure.setCustomDomain(DEFAULT_HOST, null);
+        UMConfigure.setLogEnabled(true);
+        UMConfigure.preInit(this, DEFAULT_APPKEY, DEFAULT_CHANNEL);
+        UMConfigure.setProcessEvent(true);
+        DBPathAdapter customAdapter = new DBPathAdapter() {
+            @Override
+            public String getPrefix4DBPath() {
+                String result = "";
+                result = "ShadowPlugin_";
+                return result;
+            }
+
+            @Override
+            public String getBusinessName4DBPath() {
+                return "sample-plugin-app";
+            }
+
+            @Override
+            public String getPostfix4DBPath() {
+                return "";
+            }
+        };
+        UMConfigure.setDBPathAdapter(customAdapter);
         initCase();
+
+        final Context appContext = this.getApplicationContext();
+        final String useAppkey = DEFAULT_APPKEY;
+        final String useChannel = DEFAULT_CHANNEL;
+        final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
+        executor.schedule(new Runnable() {
+            @Override
+            public void run() {
+                Log.i("MobclickRT", "--->>> 延迟5秒调用初始化接口：UMConfigure.init() ");
+                UMConfigure.init(appContext, useAppkey, useChannel, UMConfigure.DEVICE_TYPE_PHONE, null);
+            }
+        }, 5, TimeUnit.SECONDS);
     }
 
     private static void initCase() {

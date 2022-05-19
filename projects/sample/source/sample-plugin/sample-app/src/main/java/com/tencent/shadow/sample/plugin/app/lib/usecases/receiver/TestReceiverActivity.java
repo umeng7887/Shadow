@@ -18,18 +18,22 @@
 
 package com.tencent.shadow.sample.plugin.app.lib.usecases.receiver;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
 import com.tencent.shadow.sample.plugin.app.lib.R;
 import com.tencent.shadow.sample.plugin.app.lib.gallery.BaseActivity;
 import com.tencent.shadow.sample.plugin.app.lib.gallery.cases.entity.UseCase;
+import com.umeng.analytics.MobclickAgent;
+import com.umeng.commonsdk.UMConfigure;
 
 public class TestReceiverActivity extends BaseActivity {
-
+    Context appContext = null;
     public static class Case extends UseCase {
         @Override
         public String getName() {
@@ -50,6 +54,7 @@ public class TestReceiverActivity extends BaseActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        appContext = this.getApplicationContext();
         setContentView(R.layout.layout_receiver);
         Button button = findViewById(R.id.button);
         button.setText("测试静态广播发送");
@@ -57,6 +62,9 @@ public class TestReceiverActivity extends BaseActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.e("MobclickRT", "--->>> 插件进程中触发 SubProcessEkv 事件");
+                UMConfigure.getUMIDString(appContext);
+                MobclickAgent.onEvent(appContext, "SubProcessEkv");
                 Intent intent = new Intent("com.tencent.test.action");
                 intent.putExtra("msg", "收到测试静态广播发送");
                 sendBroadcast(intent);

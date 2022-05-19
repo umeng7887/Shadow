@@ -23,6 +23,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Build;
 import android.os.StrictMode;
+import android.util.Log;
 import android.webkit.WebView;
 
 import com.tencent.shadow.core.common.LoggerFactory;
@@ -30,8 +31,12 @@ import com.tencent.shadow.dynamic.host.DynamicRuntime;
 import com.tencent.shadow.dynamic.host.PluginManager;
 import com.tencent.shadow.sample.host.lib.HostUiLayerProvider;
 import com.tencent.shadow.sample.host.manager.Shadow;
+import com.umeng.analytics.process.DBPathAdapter;
+import com.umeng.commonsdk.UMConfigure;
 
 import java.io.File;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static android.os.Process.myPid;
 
@@ -39,11 +44,39 @@ public class HostApplication extends Application {
     private static HostApplication sApp;
 
     private PluginManager mPluginManager;
+    public static final String DEFAULT_APPKEY = "64632267";
+    public static final String DEFAULT_CHANNEL = "Aliyun";
+    public static final String DEFAULT_HOST = "https://log-api.aplus.emas-poc.com";
 
     @Override
     public void onCreate() {
         super.onCreate();
         sApp = this;
+        /* 初始化QT SDK */
+        UMConfigure.setCustomDomain(DEFAULT_HOST, null);
+        UMConfigure.setLogEnabled(true);
+        UMConfigure.preInit(this, DEFAULT_APPKEY, DEFAULT_CHANNEL);
+        UMConfigure.setProcessEvent(true);
+
+        DBPathAdapter customAdapter = new DBPathAdapter() {
+            @Override
+            public String getPrefix4DBPath() {
+                String result = "";
+                result = "ShadowPlugin_";
+                return result;
+            }
+
+            @Override
+            public String getBusinessName4DBPath() {
+                return "";
+            }
+
+            @Override
+            public String getPostfix4DBPath() {
+                return "";
+            }
+        };
+        UMConfigure.setDBPathAdapter(customAdapter);
 
         detectNonSdkApiUsageOnAndroidP();
         setWebViewDataDirectorySuffix();
@@ -59,6 +92,18 @@ public class HostApplication extends Application {
         PluginHelper.getInstance().init(this);
 
         HostUiLayerProvider.init(this);
+
+        final Context appContext = this.getApplicationContext();
+        final String useAppkey = DEFAULT_APPKEY;
+        final String useChannel = DEFAULT_CHANNEL;
+        final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
+        executor.schedule(new Runnable() {
+            @Override
+            public void run() {
+                Log.i("MobclickRT", "--->>> 延迟5秒调用初始化接口：UMConfigure.init() ");
+                UMConfigure.init(appContext, useAppkey, useChannel, UMConfigure.DEVICE_TYPE_PHONE, null);
+            }
+        }, 5, TimeUnit.SECONDS);
     }
 
     private static void setWebViewDataDirectorySuffix() {
